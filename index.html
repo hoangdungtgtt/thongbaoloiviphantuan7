@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thông báo lỗi học sinh - Lớp 6A</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 99%, #fecfef 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 30px 20px;
+  }
+  .container {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    padding: 32px;
+    width: 100%;
+    max-width: 600px;
+    border-top: 8px solid #e74c3c;
+  }
+  h1 {
+    text-align: center;
+    color: #c0392b;
+    font-size: 20px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    line-height: 1.4;
+  }
+  .subtitle {
+    text-align: center;
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 24px;
+    font-weight: 600;
+  }
+  label {
+    display: block;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+  select, input[type="text"] {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 18px;
+    background: #fafafa;
+  }
+  select:focus, input[type="text"]:focus {
+    border-color: #e74c3c;
+    background: #fff;
+  }
+  button.check-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  button.check-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
+  }
+  
+  .message {
+    margin-top: 16px;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    text-align: center;
+    display: none;
+    font-weight: 600;
+  }
+  .message.error { display: block; background: #ffe5e5; color: #c00; }
+  .message.success { display: block; background: #e5ffe5; color: #080; }
+  .message.info { display: block; background: #e5f0ff; color: #0055cc; }
+
+  .result {
+    margin-top: 24px;
+    display: none;
+    animation: fadeIn 0.3s ease;
+  }
+  .result.show { display: block; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .student-header {
+    background: #fff3f3;
+    padding: 16px;
+    border-radius: 10px;
+    border-left: 5px solid #e74c3c;
+    margin-bottom: 16px;
+  }
+  .student-header strong {
+    color: #c0392b;
+    font-size: 18px;
+  }
+  .error-list {
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #eee;
+  }
+  .error-list h3 {
+    font-size: 15px;
+    color: #e74c3c;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+  ul {
+    list-style: none;
+  }
+  ul li {
+    padding: 8px 0;
+    border-bottom: 1px dashed #ddd;
+    font-size: 15px;
+    color: #333;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+  }
+  ul li:last-child { border-bottom: none; }
+  ul li::before {
+    content: "⚠️";
+    margin-right: 10px;
+    font-size: 14px;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 30px 20px;
+    background: #e5ffe5;
+    border-radius: 10px;
+    color: #1e7e34;
+    font-weight: 600;
+    font-size: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>THÔNG BÁO CÁC LỖI HỌC SINH LỚP 6A VI PHẠM TRONG 7 TUẦN ĐẦU</h1>
+  <p class="subtitle">(Dành cho Phụ huynh tra cứu)</p>
+
+  <label for="studentSelect">Chọn tên học sinh</label>
+  <select id="studentSelect">
+    <option value="">-- Chọn học sinh --</option>
+  </select>
+
+  <label for="dobInput">Nhập ngày tháng năm sinh (dd/mm/yyyy, dd.mm.yyyy hoặc dd/mm/yyyy)</label>
+  <input type="text" id="dobInput" placeholder="Ví dụ: 06/03/2015, 06.03.2015 hoặc 06032015" autocomplete="off">
+
+  <button class="check-btn" id="checkBtn">🔍 Tra cứu thông tin</button>
+  
+  <div class="message" id="message"></div>
+
+  <div class="result" id="result">
+    <div class="student-header" id="studentHeader"></div>
+    <div class="error-list" id="errorList"></div>
+  </div>
+</div>
+
+<script>
+// ====== 1. DANH SÁCH 40 HỌC SINH & NGÀY SINH (Chuẩn hóa về dd/mm/yyyy) ======
+const classList = {
+  "Trần Mai Anh": "15/10/2015",
+  "Đặng Phương Chi": "03/02/2015",
+  "Trần Nguyên Chi": "27/05/2015",
+  "Bùi Quỳnh Chi": "31/01/2015",
+  "Nguyễn Thị Chi": "21/01/2015",
+  "Trần Hồng Cẩm": "10/12/2015",
+  "Ngô Mạnh Cường": "27/11/2015",
+  "Nguyễn Thành Đạt": "11/01/2015",
+  "Bùi Hiền Dịu": "20/02/2015",
+  "Nguyễn Thùy Dung": "11/07/2015",
+  "Trần Đức Duy": "06/07/2015",
+  "Bùi Gia Thịnh": "04/04/2015",
+  "Nguyễn Trung Hiếu": "11/05/2015", 
+  "Bùi Đức Hiếu": "13/05/2015",
+  "Bùi Minh Hòa": "01/01/2015",
+  "Nguyễn Thái Hòa": "06/01/2015",
+  "Lê Huy Hoàng": "21/06/2015",
+  "Nguyễn Ngọc Hùng": "06/07/2015",
+  "Bùi Đức Khánh": "14/11/2015",
+  "Nguyễn Hoàng Ngọc Khánh": "17/03/2015",
+  "Hoàng Khánh Long": "30/01/2015",
+  "Bùi Khánh Ly": "15/04/2015",
+  "Hà Trần Minh": "15/09/2015",
+  "Đỗ Anh Minh": "20/02/2015",
+  "Trần Đức Nam": "15/08/2015",
+  "Nguyễn Hoàng Hải Nam": "06/03/2015",
+  "Bùi Trung Nghĩa": "01/04/2015",
+  "Nguyễn Thị Bảo Ngọc": "29/04/2015",
+  "Bùi Ngọc Nhi": "25/08/2015",
+  "Bùi Mai Dy Niên": "03/11/2015",
+  "Trần Minh Phương": "09/06/2015",
+  "Trần Đại Quang": "23/05/2015",
+  "Nguyễn Thị Lệ Quyên": "13/02/2015",
+  "Trần Diễm Quỳnh": "18/07/2015",
+  "Bùi Nguyễn Tuệ Sam": "30/01/2015",
+  "Lê Tiến Tài": "16/01/2015",
+  "Nguyễn Trung Thành": "11/05/2015", 
+  "Trần Đức Thắng": "04/01/2015",
+  "Bùi Đức Tiến": "04/09/2015",
+  "Ngô Xuân Tùng": "18/03/2015"
+};
+
+// ====== 2. DỮ LIỆU LỖI VI PHẠM ======
+const errorData = {
+  "Nguyễn Hoàng Hải Nam": [
+    "Gây gổ, đánh nhau", "Văng tục, chửi bậy (bao gồm cả trên TikTok)", "Chửi láo", 
+    "Đá bóng ngoài hành lang / trên tầng", "Ném cát vào mặt bạn Quang", "Lấy khăn quàng cột vào mặt bạn",
+    "Bị ghi vào sổ đầu bài / sổ sao đỏ / sổ tự quản (đứng cuối, hạng bét)", "Nói chuyện trong giờ",
+    "Cãi cô / cãi lại thầy cô giáo", "Trêu chọc / trêu vô duyên các bạn (đặc biệt là các bạn nữ và bạn Hòa)",
+    "Giật tóc bạn Ly", "Mất trật tự", "Trong 7 tuần bị đổi chỗ 3 lần", "Hát trong giờ Văn",
+    "Bắt nạt bạn bè", "Không trực nhật (trực nhật bẩn) để lớp bị trừ điểm", "Làm việc riêng trong giờ học",
+    "Đi xe trong trường", "Nam tụt quần Thắng / tụt quần bạn", "Bị thầy cô phê bình, nhắc nhở",
+    "Chọc bút vào lưng bạn Ly", "Nhảy trên bàn", "Đi ra khỏi chỗ tự do", "Nói chuyện làm lớp bị giờ khá, TB",
+    "Lấy xe của bạn Sam đạp từ xóm 5 lên xóm 7", "Không đeo khăn quàng / đeo khăn quàng chồng đổi",
+    "Đập bài trong lớp", "Không lễ phép với thầy cô giáo", "Gọi tên bố mẹ bạn, xúc phạm bố mẹ bạn",
+    "Kinh thường, nói xấu các bạn nữ trong lớp", "Không đi dẹp quai hậu", "Quên mũ / không đội mũ / không có quạt",
+    "Không nghiêm túc trong giờ học", "Dạy láo bạn Hòa / dạy bạn Hòa chửi láo", "Vứt mũ của bạn Trân Chi",
+    "Lấy đồ đâm sau lưng bạn Ly", "Đánh bài", "Nói tự do trong lớp", "Đặt biệt danh cho các bạn",
+    "Đánh các bạn trong lớp (không lý do)", "Đe dọa các bạn trong lớp", "Nam chiếu tướng các bạn trai",
+    "Không tôn trọng người lớn", "Giấu đồ của các bạn", "Chơi trò chơi thua rồi đánh bạn",
+    "Nói leo nói lắm (bị cô nhắc vẫn nói tiếp)", "Nói tục còn nói to", "Lấc cấc",
+    "Cô hỏi tên bạn Quyên cứ loi choi bảo 'Quyên nhà Tâm điên'", "Hay chửi các bạn",
+    "Đánh trống vào lớp còn cố tình đi chậm", "Đi muộn, uống nước khi giáo viên đã vào lớp",
+    "Toàn đi tự do trong lớp", "Rác không đổ ra chơi, vứt cứ cố tình xin thầy cô đi vứt",
+    "Chạy nhảy leo trèo trên bàn, dẫm vào vở bạn Quyên", "Nói khó nghe, vô duyên, các bạn không thích",
+    "Ngồi gác chân lên bàn như nhà mình", "Đánh bạn vô lý", "Trong tiết cô Ngát nói rất lắm", "Bắt nạt bạn Hòa"
+  ],
+  "Trần Hồng Cẩm": [
+    "Không ghi bài / không ghi chép bài / không ghi bài tập", "Nói chuyện trong giờ",
+    "Nói tục, chửi bậy (trong trường)", "Bị ghi vào sổ đầu bài (nhất tiết Văn) / bị ghi vào sổ sao đỏ",
+    "Bị ghi vào sổ theo dõi của lớp nhiều lần (hạng bét, đứng thứ 10/10, xếp hạng 10/10 từ tuần 4 đến tuần 7, đứng cuối sổ theo dõi)",
+    "Đánh nhau", "Mất tập trung trong giờ", "Đập bài trong giờ (kể cả giờ truy bài, giờ thi)",
+    "Chửi láo / chửi các bạn / chửi tổ trưởng", "Dạy láo bạn Hòa ('Thằng vâu, Thằng điên' và 'Hùng điên')",
+    "Đá bóng ngoài hành lang", "Trêu bạn Hòa / đánh Hòa / bắt nạt bạn Hòa / chuyền bắt nạt Hòa",
+    "Cãi cô / cãi tay đôi với cô Ngát / cãi lại thầy cô giáo / cãi lại các giáo viên khác",
+    "Bị viết vào sổ sao đỏ", "Không đi dẹp quai hậu", "Không đội mũ khi tập trung dưới sân trường / quên mũ / quên quạt",
+    "Mất trật tự khi cô giảng bài", "Không nghiêm túc trong giờ", "Đi xe trong trường (Cầm đi xe trong trường bị cô Lý bắt)",
+    "Lầm bầm trong lớp", "Trêu chọc bạn", "Đổi chỗ tự do trong lớp", "Bôi chất bẩn vào đồ của bạn Quyên",
+    "Chửi tục", "Đập bàn", "Trốn xuống gầm bàn để chơi bài", "Chơi, nghịch đồ chơi trong lớp",
+    "Để lớp bị giờ khá, TB", "Đi ra khỏi chỗ", "Nói xấu thầy, cô giáo", "Ăn nói chống không với thầy cô",
+    "Không lễ phép với thầy cô giáo", "Bị cô giáo phê bình, nhắc nhở",
+    "Nói không nghe lời / thầy cô nhắc không nghe lời / nhóm nhờ / cô nhắc không nghe còn cãi",
+    "Bị cô Ngát ghim tiết nào cũng bị lên mục giảng ngồi ghi bài", "Nghịch trong giờ truy bài", "Viết linh tinh cho bạn Quynh"
+  ],
+  "Trần Đức Thắng": [
+    "Bị ghi vào sổ đầu bài / sổ sao đỏ / sổ tự quản", "Chửi bậy, nói tục (bao gồm cả trên TikTok)",
+    "Chửi láo", "Đập bàn trong giờ truy bài / trong lớp", "Đá bóng ngoài hành lang",
+    "Nói leo trong giờ học / nói lắm", "Trêu Hòa", "Thằng trêu bạn Quyên", "Bị viết bản kiểm điểm",
+    "Đánh nhau / gây gổ với các bạn", "Cãi cô / cãi lại thầy cô giáo",
+    "Bôi cứt / bôi chất bẩn vào vở cầu lông của bạn Quyên (và đồ của bạn Quyên)",
+    "Tự ý đổi chỗ trong giờ truy bài / đổi chỗ tự do trong lớp", "Không đội mũ / quên mũ / quên khăn quàng / quên quạt",
+    "Trong giờ truy bài tự ý chạy lung tung, chạy linh tinh tùng phèo trong lớp", "Bị âm điểm trong sổ theo dõi",
+    "Nói chuyện nhiều trong giờ học / nói chuyện trong lớp", "Bị thầy cô phê bình nhiều lần / nhắc nhở rồi vẫn không nghe lời",
+    "Trêu chọc bạn bè / trêu bạn", "Chơi, nghịch đồ chơi trong lớp", "Không trực nhật / trực nhật muộn",
+    "Không nghiêm túc", "Mất trật tự khi cô giảng bài", "Đi ra khỏi chỗ / đi ra khỏi chỗ trong giờ học",
+    "Đe dọa bạn", "Chạnh chọe", "Để lớp bị giờ khá, TB", "Đi xe trong trường", "Lầm bầm trong lớp",
+    "Đứng cuối sổ theo dõi", "Giấu dép, giấu cặp, giấu đồ của bạn", "Làm việc riêng trong giờ truy bài / trong giờ học",
+    "Nói lắm còn biện minh", "Đập bài với Cẩm trong giờ truy bài", "Lấc cấc", "Quay ngang quay ngửa trong giờ"
+  ],
+  "Bùi Gia Thịnh": [
+    "Cãi giáo viên / cãi cô / cãi thầy cô giáo / cãi lại tổ trưởng / cãi lại lớp trưởng (tổ trưởng nhắc nhưng không nghe)",
+    "Đi muộn / vào muộn còn cố uống nước khi giáo viên đã vào lớp",
+    "Lầm mồm / lầm mồm cô nhắc nhở còn cố biện minh", "Đi tự do trong lớp / toàn đi tự do trong lớp",
+    "Đập bài (trong giờ, giờ truy bài, cô giáo nhắc vẫn chơi)", "Đánh trống vào lớp còn cố tình đi chậm, la cà không vào sớm",
+    "Lúc ra về không đi về, ở lại còn đá bóng", "Nằm dài ra ghế trong tiết học (khi đang học Văn)",
+    "Nói tục chửi bậy, nói chuyện bị ghi sổ đầu bài", "Không nghiêm túc trong giờ học Văn",
+    "Bị ghi vào sổ đầu bài / sổ sao đỏ", "Nói chuyện trong giờ Văn nhiều lần / nói chuyện trong tất cả các tiết / nói chuyện trong giờ truy bài",
+    "Quên mũ, quên quạt, không đi dẹp quai hậu", "Bị xếp hạng 8/8 trong sổ theo dõi (các tuần từ tuần 4 đến tuần 6) / trong sổ tự quản đứng cuối cùng",
+    "Chơi, nghịch đồ chơi trong lớp", "Quay xuống nói chuyện với bạn Hiếu / quay xuống làm việc riêng",
+    "Không trực nhật / trực nhật muộn", "Không nghiêm túc", "Cột nhà với thầy cô", "Chửi tục",
+    "Không mang sách vở đầy đủ", "Để lớp bị giờ khá, TB", "Làm việc riêng trong giờ học", "Nói rất rất nhiều",
+    "Đánh bạn", "Lấy đồ của bạn", "Nhắc không nghe còn chửi lại bạn", "Cô Văn nhắc thì không nghe lời còn hỗn láo với cô",
+    "Luôn xếp bét trong tổ", "Lấc cấc, loi choi", "Đòi lên mục giảng ngồi (có đuổi về thì bảo 'đuổi em về thì bao không ghi bài đâu' xong làm nhám)",
+    "Bị âm điểm trong sổ quan sát", "Rác không để ra chơi, vứt, cứ cố tình xin thầy cô đi vứt"
+  ],
+  "Nguyễn Ngọc Hùng": [
+    "Đập bài (trong giờ truy bài / trong giờ học)", "Nói tục, chửi bậy (trong trường)",
+    "Nói leo (bị cô chửi)", "Bị cô ghi vào sổ đầu bài / sổ sao đỏ", "Đấm/đánh bạn vô lý",
+    "Ra chơi dẫm lên sách em / dẫm vào vở bạn", "Quyên trêu bạn Hòa / đánh, trêu Hòa / bắt nạt bạn Hòa",
+    "Cãi cô / cãi lại thầy cô giáo", "Cướp đồ của bạn / lấy đồ của bạn tụ tiện / lấy xe đạp của bạn khi bạn chưa cho phép",
+    "Nói nhiều", "Mất tập trung trong giờ học Văn", "Trêu chọc bạn bè / trêu bạn",
+    "Làm việc riêng trong giờ / làm việc riêng trong giờ học", "Bị cô phê bình",
+    "Đi ra khỏi chỗ / tự ý đi ra khỏi chỗ (trong giờ truy bài)", "Cãi tổ trưởng / chửi tổ trưởng",
+    "Nói tự do / không giữ trật tự khi cô giảng bài", "Để lớp bị giờ khá, TB",
+    "Quên mũ, quên quạt, không đi dẹp quai hậu", "Đe dọa bạn", "Cô nhắc không nghe",
+    "Chạy nhảy leo trèo trên bàn", "Nói khó nghe, vô duyên (các bạn không thích)", "Lấc cấc",
+    "Ngồi gác chân lên bàn như nhà mình", "Trong tiết cô Ngát nói rất lắm"
+  ]
+};
+
+// ====== 3. KHỞI TẠO GIAO DIỆN ======
+const selectEl = document.getElementById("studentSelect");
+const dobInput = document.getElementById("dobInput");
+const checkBtn = document.getElementById("checkBtn");
+const messageEl = document.getElementById("message");
+const resultEl = document.getElementById("result");
+const studentHeader = document.getElementById("studentHeader");
+const errorListEl = document.getElementById("errorList");
+
+for (const name in classList) {
+  const option = document.createElement("option");
+  option.value = name;
+  option.textContent = name;
+  selectEl.appendChild(option);
+}
+
+// Hàm chuẩn hóa ngày tháng: Biến mọi định dạng (06/03/2015, 06.03.2015, 06032015) thành dd/mm/yyyy
+function normalizeDate(dateStr) {
+  // Loại bỏ mọi ký tự không phải là số
+  let digits = dateStr.replace(/\D/g, ''); 
+  
+  // Nếu đủ 8 số (ddmmyyyy), tự động chèn dấu /
+  if (digits.length === 8) {
+    return `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4,8)}`;
+  }
+  
+  // Nếu người dùng nhập có dấu chấm hoặc gạch chéo, thay thế hết bằng /
+  let standardFormat = dateStr.replace(/[\.\-]/g, '/');
+  
+  // Tách ra để xử lý trường hợp nhập thiếu số 0 ở đầu (VD: 6/3/2015)
+  let parts = standardFormat.split('/');
+  if (parts.length === 3) {
+    let d = parts[0].padStart(2, '0');
+    let m = parts[1].padStart(2, '0');
+    let y = parts[2];
+    return `${d}/${m}/${y}`;
+  }
+  
+  return standardFormat;
+}
+
+// Tự động format khi đang gõ (chỉ áp dụng nếu gõ toàn số)
+dobInput.addEventListener("input", function(e) {
+  let val = e.target.value;
+  // Nếu chỉ toàn số, tự động thêm dấu / cho dễ nhìn
+  if (/^\d+$/.test(val.replace(/\s/g, ''))) {
+    let digits = val.replace(/\D/g, '');
+    if (digits.length > 2 && digits.length <= 4) {
+      val = digits.slice(0, 2) + '/' + digits.slice(2);
+    } else if (digits.length > 4) {
+      val = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4, 8);
+    }
+    e.target.value = val;
+  }
+});
+
+// ====== 4. XỬ LÝ KHI BẤM NÚT TRA CỨU ======
+checkBtn.addEventListener("click", function() {
+  const selectedName = selectEl.value;
+  const dobRaw = dobInput.value.trim();
+
+  messageEl.className = "message";
+  messageEl.style.display = "none";
+  resultEl.classList.remove("show");
+
+  if (!selectedName) {
+    showMessage("Vui lòng chọn tên học sinh.", "error");
+    return;
+  }
+  if (!dobRaw) {
+    showMessage("Vui lòng nhập ngày tháng năm sinh.", "error");
+    return;
+  }
+
+  const correctDob = classList[selectedName];
+  const inputDobNormalized = normalizeDate(dobRaw);
+
+  // So sánh ngày sinh đã được chuẩn hóa
+  if (correctDob !== inputDobNormalized) {
+    showMessage("❌ Ngày sinh không khớp. Vui lòng kiểm tra lại.", "error");
+    return;
+  }
+
+  messageEl.style.display = "none";
+  studentHeader.innerHTML = `Học sinh: <strong>${selectedName}</strong>`;
+  
+  const errors = errorData[selectedName];
+
+  if (!errors || errors.length === 0) {
+    errorListEl.innerHTML = `
+      <div class="empty-state">
+        ✅ Chưa có lỗi hoặc lỗi thầy giáo chủ nhiệm chưa cập nhật.
+      </div>`;
+  } else {
+    let html = `<h3>Danh sách lỗi vi phạm (${errors.length} lỗi):</h3><ul>`;
+    errors.forEach(err => {
+      html += `<li>${err}</li>`;
+    });
+    html += `</ul>`;
+    errorListEl.innerHTML = html;
+  }
+
+  resultEl.classList.add("show");
+  resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+});
+
+function showMessage(text, type) {
+  messageEl.textContent = text;
+  messageEl.className = "message " + type;
+}
+</script>
+</body>
+</html>
